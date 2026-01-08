@@ -114,18 +114,11 @@ class Roblox:
                         self.counter.increment()
                 else:
                     if self.attempts == 10:
-                        self.checked = False
+                        Output("ERROR").log(f"Retry limit reached | {self.account[0]}")
+                        self.checked = True
                         self.attempts = 0
-
-                        with self.lock.get_lock():
-                            self.account = self.accounts[self.counter.get_value()].strip("\n").split(":")
-                            self.counter.increment()
-
-                        Output("ERROR").log(f"Invalid account | {self.account[0]}")
-
-                        with open("output/invalid.txt", "a", encoding="utf-8") as file:
-                            file.write(f'{self.account[0]}:{self.account[1]}\n')
-                
+                        continue
+                        
                 Output("INFO").log(f"Checking account | {self.account[0]}")
 
                 self.session, self.sec_ch_ua, self.user_agent, self.proxy = Session().session()
