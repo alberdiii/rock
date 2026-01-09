@@ -1,6 +1,6 @@
 {
-    "solverKey": "RoSolve key goes here",
+    "solverKey": "dff7cea5bc721cc1af44e6ebedb21271aabd4dc1ef354222a595217ff230a398",
     "threads": 10,
-    "logWebhook": false,
-    "webhook": "Webhook url goes here"
+    "logWebhook": true,
+    "webhook": "https://discordapp.com/api/webhooks/1451705384913076383/XGRKypQ5JNcg5WvOkAeKc1iXqXEiToLlWqmXxRO92wHDG7iqSObNJshonyHzkPf-JYJ2"
 }
